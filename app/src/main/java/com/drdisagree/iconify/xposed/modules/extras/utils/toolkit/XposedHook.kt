@@ -21,6 +21,31 @@ import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 import java.util.regex.Pattern
 
+private fun runHookCallback(
+    stage: String,
+    callback: (XC_MethodHook.MethodHookParam) -> Unit,
+    param: XC_MethodHook.MethodHookParam
+) {
+    try {
+        callback(param)
+    } catch (throwable: Throwable) {
+        log(XposedHook, "Samsung SystemUI $stage callback failed")
+        log(XposedHook, throwable)
+    }
+}
+
+private fun runLayoutHookCallback(
+    callback: (XC_LayoutInflated.LayoutInflatedParam) -> Unit,
+    param: XC_LayoutInflated.LayoutInflatedParam
+) {
+    try {
+        callback(param)
+    } catch (throwable: Throwable) {
+        log(XposedHook, "Samsung SystemUI layout callback failed")
+        log(XposedHook, throwable)
+    }
+}
+
 class XposedHook {
     companion object {
         lateinit var loadPackageParam: XC_LoadPackage.LoadPackageParam
@@ -370,7 +395,7 @@ class MethodHookHelper(
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
-                    callback(param)
+                    runHookCallback("before constructor", callback, param)
                 }
             })
         } else {
@@ -379,7 +404,7 @@ class MethodHookHelper(
                 *parameterTypes!!,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        callback(param)
+                        runHookCallback("before constructor", callback, param)
                     }
                 }
             )
@@ -394,7 +419,7 @@ class MethodHookHelper(
         if (parameterTypes.isNullOrEmpty()) {
             hookAllConstructors(clazz, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    callback(param)
+                    runHookCallback("after constructor", callback, param)
                 }
             })
         } else {
@@ -403,7 +428,7 @@ class MethodHookHelper(
                 *parameterTypes!!,
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        callback(param)
+                        runHookCallback("after constructor", callback, param)
                     }
                 }
             )
@@ -419,14 +444,14 @@ class MethodHookHelper(
         if (clazz == null) {
             hookMethod(method, object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
-                    callback(param)
+                    runHookCallback("before method", callback, param)
                 }
             })
         } else {
             if (parameterTypes.isNullOrEmpty()) {
                 hookAllMethods(clazz, method.name, object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        callback(param)
+                        runHookCallback("before method", callback, param)
                     }
                 })
             } else {
@@ -436,7 +461,7 @@ class MethodHookHelper(
                     *parameterTypes!!,
                     object : XC_MethodHook() {
                         override fun beforeHookedMethod(param: MethodHookParam) {
-                            callback(param)
+                            runHookCallback("before method", callback, param)
                         }
                     }
                 )
@@ -451,14 +476,14 @@ class MethodHookHelper(
         if (clazz == null) {
             hookMethod(method, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    callback(param)
+                    runHookCallback("after method", callback, param)
                 }
             })
         } else {
             if (parameterTypes.isNullOrEmpty()) {
                 hookAllMethods(clazz, method.name, object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        callback(param)
+                        runHookCallback("after method", callback, param)
                     }
                 })
             } else {
@@ -468,7 +493,7 @@ class MethodHookHelper(
                     *parameterTypes!!,
                     object : XC_MethodHook() {
                         override fun afterHookedMethod(param: MethodHookParam) {
-                            callback(param)
+                            runHookCallback("after method", callback, param)
                         }
                     }
                 )
@@ -483,7 +508,7 @@ class MethodHookHelper(
         if (clazz == null) {
             hookMethod(method, object : XC_MethodReplacement() {
                 override fun replaceHookedMethod(param: MethodHookParam): Any? {
-                    callback(param)
+                    runHookCallback("replace method", callback, param)
                     return null
                 }
             })
@@ -491,7 +516,7 @@ class MethodHookHelper(
             if (parameterTypes.isNullOrEmpty()) {
                 hookAllMethods(clazz, method.name, object : XC_MethodReplacement() {
                     override fun replaceHookedMethod(param: MethodHookParam): Any? {
-                        callback(param)
+                        runHookCallback("replace method", callback, param)
                         return null
                     }
                 })
@@ -502,7 +527,7 @@ class MethodHookHelper(
                     *parameterTypes!!,
                     object : XC_MethodReplacement() {
                         override fun replaceHookedMethod(param: MethodHookParam): Any? {
-                            callback(param)
+                            runHookCallback("replace method", callback, param)
                             return null
                         }
                     }
@@ -587,7 +612,7 @@ class LayoutHookHelper(private val xResources: XResources) {
                 resourceName,
                 object : XC_LayoutInflated() {
                     override fun handleLayoutInflated(param: LayoutInflatedParam) {
-                        callback(param)
+                        runLayoutHookCallback(callback, param)
                     }
                 }
             )
