@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.content.res.XResources
 import com.drdisagree.iconify.xposed.modules.extras.utils.ViewHelper.toPx
+import com.drdisagree.iconify.xposed.utils.SystemUiProfile
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge.hookAllConstructors
@@ -24,9 +25,65 @@ class XposedHook {
     companion object {
         lateinit var loadPackageParam: XC_LoadPackage.LoadPackageParam
 
+        /**
+         * Samsung's Android 13 SystemUI keeps the same responsibilities as
+         * AOSP but moves several classes into Samsung-specific packages. Keep
+         * those fallbacks here so individual modules do not each need a
+         * different One UI branch.
+         */
+        private val samsungClassAliases = mapOf(
+            "com.android.systemui.battery.BatteryMeterView" to listOf(
+                "com.android.systemui.BatteryMeterView"
+            ),
+            "com.android.systemui.BatteryMeterView" to listOf(
+                "com.android.systemui.battery.BatteryMeterView"
+            ),
+            "com.android.systemui.statusbar.phone.CollapsedStatusBarFragment" to listOf(
+                "com.android.systemui.statusbar.phone.fragment.CollapsedStatusBarFragment"
+            ),
+            "com.android.systemui.statusbar.phone.fragment.CollapsedStatusBarFragment" to listOf(
+                "com.android.systemui.statusbar.phone.CollapsedStatusBarFragment"
+            ),
+            "com.android.systemui.shade.NotificationPanelViewController" to listOf(
+                "com.android.systemui.statusbar.phone.NotificationPanelViewController"
+            ),
+            "com.android.systemui.shade.NotificationPanelViewController\$ConfigurationListener" to listOf(
+                "com.android.systemui.statusbar.phone.NotificationPanelViewController\$ConfigurationListener"
+            ),
+            "com.android.systemui.shade.ShadeHeaderController" to listOf(
+                "com.android.systemui.statusbar.phone.LargeScreenShadeHeaderController"
+            ),
+            "com.android.systemui.media.NotificationMediaManager" to listOf(
+                "com.android.systemui.statusbar.NotificationMediaManager"
+            ),
+            "com.android.systemui.media.controls.ui.MediaControlPanel" to listOf(
+                "com.android.systemui.media.MediaControlPanel"
+            ),
+            "com.android.systemui.media.controls.ui.controller.MediaControlPanel" to listOf(
+                "com.android.systemui.media.MediaControlPanel"
+            ),
+            "com.android.systemui.media.controls.ui.MediaViewController" to listOf(
+                "com.android.systemui.media.MediaViewController"
+            ),
+            "com.android.systemui.media.controls.ui.controller.MediaViewController" to listOf(
+                "com.android.systemui.media.MediaViewController"
+            ),
+            "com.android.systemui.qs.QSImpl" to listOf(
+                "com.android.systemui.qs.QSFragment"
+            ),
+            "com.android.systemui.qs.tileimpl.QSTileViewImpl" to listOf(
+                "com.android.systemui.qs.tileimpl.SecQSTileView"
+            ),
+            "com.android.systemui.statusbar.notification.footer.ui.view.FooterView" to listOf(
+                "com.android.systemui.statusbar.notification.row.FooterView"
+            ),
+            "com.android.systemui.wallpapers.ImageWallpaper\$CanvasEngine" to listOf(
+                "com.android.systemui.ImageWallpaper\$GLEngine"
+            )
+        )
+
         fun init(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-            Companion.loadPackageParam =
-                loadPackageParam
+            Companion.loadPackageParam = loadPackageParam
         }
 
         fun findClass(
@@ -39,10 +96,18 @@ class XposedHook {
             }
 
             for (className in classNames) {
-                val clazz = XposedHelpers.findClassIfExists(
-                    className,
-                    loadPackageParam.classLoader
-                )
+                val candidates = sequenceOf(className)
+                    .plus(
+                        if (SystemUiProfile.isSamsung) {
+                            samsungClassAliases[className].orEmpty().asSequence()
+                        } else {
+                            emptySequence()
+                        }
+                    )
+                    .distinct()
+                val clazz = candidates.mapNotNull { candidate ->
+                    XposedHelpers.findClassIfExists(candidate, loadPackageParam.classLoader)
+                }.firstOrNull()
                 if (clazz != null) return clazz
             }
 

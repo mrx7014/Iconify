@@ -1,6 +1,7 @@
 package com.drdisagree.iconify.xposed
 
 import com.drdisagree.iconify.xposed.modules.extras.utils.toolkit.XposedHook
+import com.drdisagree.iconify.xposed.utils.SystemUiProfile
 import de.robv.android.xposed.IXposedHookInitPackageResources
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.IXposedHookZygoteInit
@@ -18,6 +19,7 @@ class InitHook : IXposedHookZygoteInit, IXposedHookInitPackageResources, IXposed
 
     override fun handleLoadPackage(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         XposedHook.init(loadPackageParam)
+        SystemUiProfile.init(loadPackageParam)
         hookEntry.handleLoadPackage(loadPackageParam)
     }
 
