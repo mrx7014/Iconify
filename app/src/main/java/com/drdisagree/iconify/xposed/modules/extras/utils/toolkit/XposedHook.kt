@@ -93,8 +93,23 @@ class XposedHook {
             "com.android.systemui.media.controls.ui.controller.MediaViewController" to listOf(
                 "com.android.systemui.media.MediaViewController"
             ),
+            "com.android.systemui.media.controls.domain.pipeline.MediaDataManager" to listOf(
+                "com.android.systemui.media.MediaDataManager"
+            ),
+            "com.android.systemui.media.controls.domain.pipeline.MediaDeviceManager" to listOf(
+                "com.android.systemui.media.MediaDeviceManager"
+            ),
+            "com.android.systemui.media.controls.pipeline.MediaDataManager" to listOf(
+                "com.android.systemui.media.MediaDataManager"
+            ),
+            "com.android.systemui.media.controls.pipeline.MediaDeviceManager" to listOf(
+                "com.android.systemui.media.MediaDeviceManager"
+            ),
             "com.android.systemui.qs.QSImpl" to listOf(
                 "com.android.systemui.qs.QSFragment"
+            ),
+            "com.android.systemui.qs.tiles.InternetTileNewImpl" to listOf(
+                "com.android.systemui.qs.tiles.InternetTile"
             ),
             "com.android.systemui.qs.tileimpl.QSTileViewImpl" to listOf(
                 "com.android.systemui.qs.tileimpl.SecQSTileView"
